@@ -1,9 +1,11 @@
 from q_learning import QLearning
+from SARSA import SARSALearning
 from method import RandomMethod
 
 if __name__ == "__main__":
     # Initalize a method
-    method = QLearning("MountainCar-v0")
+    method = SARSALearning("MountainCar-v0")
+    #method = QLearning("MountainCar-v0")
     # method = RandomMethod("MountainCar-v0")
 
     # Build the model

@@ -35,7 +35,7 @@ class RandomMethod:
     def bin_data(self, state_in):
         # Scale the position
         max_location = self.env.observation_space.high[0] + abs(self.env.observation_space.low[0])
-        angle_scaled = \
+        location_scaled = \
             math.floor((state_in[0] + abs(self.env.observation_space.low[0])) / max_location * self.location_bins)
 
         # Limit max and min values, else scale the velocity
@@ -46,7 +46,7 @@ class RandomMethod:
             velocity_scaled = 0
         else:
             velocity_scaled = math.floor((state_in[1] + max_velocity) / (max_velocity * 2) * self.velocity_bins)
-        return angle_scaled - 1, velocity_scaled - 1
+        return location_scaled - 1, velocity_scaled - 1
 
     # Select an action to perform given a state and if the model is training
     def select_action(self, state):
