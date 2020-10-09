@@ -24,7 +24,7 @@ class RandomMethod:
     @staticmethod
     # Lower the chance to take a random action over time
     def select_exploration_chance(x):
-        return max(.001, min(1.0, 1.0 - math.log10((x+1)/25)))
+        return max(.05, min(1.0, 1.0 - math.log10((x+1)/25)))
 
     @staticmethod
     # Lower the rate of change of the model over time
@@ -40,12 +40,7 @@ class RandomMethod:
 
         # Limit max and min values, else scale the velocity
         max_velocity = self.env.observation_space.high[1]
-        if state_in[1] > max_velocity:
-            velocity_scaled = 11
-        elif state_in[1] < -max_velocity:
-            velocity_scaled = 0
-        else:
-            velocity_scaled = math.floor((state_in[1] + max_velocity) / (max_velocity * 2) * self.velocity_bins)
+        velocity_scaled = math.floor((state_in[1] + max_velocity) / (max_velocity * 2) * self.velocity_bins)
         return location_scaled - 1, velocity_scaled - 1
 
     # Select an action to perform given a state and if the model is training
