@@ -5,18 +5,18 @@ import pickle
 from method import RandomMethod
 
 
-# Solve the enviroment using q learning
+# Solve the environment using q learning
 class QLearning(RandomMethod):
     def __init__(self, environment, use_learning_curve=True):
         super().__init__(environment, use_learning_curve)
 
         # Hyperparameters
         self.learning_rate = .8  # Alpha, how fast the model is trained.
-        self.discount_factor = 1  # Gamma, immident results or delayed results.
+        self.discount_factor = 1  # Gamma, immediate results or delayed results.
         self.exploration_chance = .1  # Epsilon, percent chance to take a random action.
 
         self.env = gym.make(environment)
-        self.env._max_episode_steps = 500  # How long the simulation runs at max, should only be changed for testing
+        self.env._max_episode_steps = 200  # How long the simulation runs at max, should only be changed for testing
 
         # q_table holds the model that q learning uses to predict the best action
         self.q_table = np.zeros([self.location_bins, self.velocity_bins, self.env.action_space.n])
@@ -52,7 +52,7 @@ class QLearning(RandomMethod):
             timesteps = 0
             done = False
 
-            # initalize the model
+            # initialize the model
             state = self.env.reset()
             location, velocity = self.bin_data(state)  # Position of Cart, Velocity of Cart
 
@@ -66,14 +66,16 @@ class QLearning(RandomMethod):
                 # run the simulation
                 state, reward, done, info = self.env.step(action)
 
-                # convert the continueous state data to discrete data
+                # convert the continuous state data to discrete data
                 location, velocity = self.bin_data(state)
+
+                # Q(S,A) + Q(S,A) + a * [R + gamma * max_a(Q(S',a)) - Q(S,A)]
 
                 # update the q learning model
                 next_max = np.max(self.q_table[location][velocity])
                 old_value = self.q_table[location_old][velocity_old][action]
-                self.q_table[location_old][velocity_old][action] += \
-                    self.learning_rate * (reward + self.discount_factor * next_max - old_value)
+                self.q_table[location_old][velocity_old][action] \
+                    += self.learning_rate * (reward + self.discount_factor * next_max - old_value)
 
                 # number of timesteps taken to solve
                 timesteps += 1
