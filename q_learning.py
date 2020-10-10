@@ -1,98 +1,73 @@
 import gym
 import random
 import numpy as np
-import pickle
+import math
 from method import RandomMethod
 
 
-# Solve the environment using q learning
 class QLearning(RandomMethod):
-    def __init__(self, environment, use_learning_curve=True):
-        super().__init__(environment, use_learning_curve)
+    """
+    Attempts to solve the mountain cart problem using Q-Learning.
 
-        # Hyperparameters
-        self.learning_rate = .8  # Alpha, how fast the model is trained.
-        self.discount_factor = 1  # Gamma, immediate results or delayed results.
-        self.exploration_chance = .1  # Epsilon, percent chance to take a random action.
+    Based on the q-learning method described in
+    Watkins, Christopher JCH, and Peter Dayan. "Q-learning." Machine learning 8.3-4 (1992): 279-292.
+    """
+    def __init__(self, environment):
+        super().__init__(environment)
 
-        self.env = gym.make(environment)
-        self.env._max_episode_steps = 200  # How long the simulation runs at max, should only be changed for testing
+        self.location_bins = 12
+        self.velocity_bins = 12
 
         # q_table holds the model that q learning uses to predict the best action
         self.q_table = np.zeros([self.location_bins, self.velocity_bins, self.env.action_space.n])
 
-    # load a pretrained model
-    def load_model(self):
-        self.q_table = pickle.load(open("Best_Method.p", "rb"))
+    # Reset's the model for multiple runs
+    def reset_model(self):
+        self.convergence_graph = []
+        self.q_table = np.zeros([self.location_bins, self.velocity_bins, self.env.action_space.n])
 
-    # Select an action to perform given a state and if the model is training
-    def select_action(self, state, train=False):
-        location, velocity = self.bin_data(state)
+    # Convert the continuous data to discrete
+    def _bin_data(self, state_in):
+        # Scale the position
+        max_location = self.env.observation_space.high[0] + abs(self.env.observation_space.low[0])
+        location_scaled = \
+            math.floor((state_in[0] + abs(self.env.observation_space.low[0])) / max_location * self.location_bins)
 
-        if train:
-            # either do something random or do the models best predicted action
-            if random.uniform(0, 1) < self.exploration_chance:
-                action = self.env.action_space.sample()  # Explore action space
-            else:
-                action = np.argmax(self.q_table[location][velocity])  # Exploit learned values
+        # Limit max and min values, else scale the velocity
+        max_velocity = self.env.observation_space.high[1]
+        velocity_scaled = math.floor((state_in[1] + max_velocity) / (max_velocity * 2) * self.velocity_bins)
+        return location_scaled - 1, velocity_scaled - 1
+
+    # Sets the epsilon greedy policy
+    def _select_action(self, state, train=False):
+        location, velocity = self._bin_data(state)
+
+        if train and random.uniform(0, 1) < self.epsilon:
+            return self.env.action_space.sample()
         else:
-            action = np.argmax(self.q_table[location][velocity])
-        return action
+            return np.argmax(self.q_table[location][velocity])
 
-    # Train the model to solve the problem, attempts are episodes, timesteps are epochs
-    def train(self, max_attempts=1000):
-        streak = 0
-        for attempt in range(max_attempts):
+    def _model(self):
+        # initialize the model
+        state = self.env.reset()
+        location, velocity = self._bin_data(state)  # Position of Cart, Velocity of Cart
+        done = False
+        while not done:
+            # either do something random or do the models best predicted action
+            action = self._select_action(state, train=True)
 
-            # Lower the exploration rate and the learning rate over time.
-            if self.use_learning_curve:
-                self.learning_rate = self.select_learning_rate(attempt)
-                self.exploration_chance = self.select_exploration_chance(attempt)
+            # save the old state
+            location_old, velocity_old = location, velocity
 
-            timesteps = 0
-            done = False
+            # run the simulation
+            state, reward, done, info = self.env.step(action)
 
-            # initialize the model
-            state = self.env.reset()
-            location, velocity = self.bin_data(state)  # Position of Cart, Velocity of Cart
+            # convert the continuous state data to discrete data
+            location, velocity = self._bin_data(state)
 
-            while not done:
-                # either do something random or do the models best predicted action
-                action = self.select_action(state, train=True)
-
-                # save the old state
-                location_old, velocity_old = location, velocity
-
-                # run the simulation
-                state, reward, done, info = self.env.step(action)
-
-                # convert the continuous state data to discrete data
-                location, velocity = self.bin_data(state)
-
-                # Q(S,A) + Q(S,A) + a * [R + gamma * max_a(Q(S',a)) - Q(S,A)]
-
-                # update the q learning model
-                next_max = np.max(self.q_table[location][velocity])
-                old_value = self.q_table[location_old][velocity_old][action]
-                self.q_table[location_old][velocity_old][action] \
-                    += self.learning_rate * (reward + self.discount_factor * next_max - old_value)
-
-                # number of timesteps taken to solve
-                timesteps += 1
-
-            # Print progress bar and then add data to graph
-            if attempt % (max_attempts / 10) == 0:
-                print("Training " + str(attempt / max_attempts * 100) + "% Complete.")
-                pass
-            self.convergence_graph.append(timesteps)
-
-            # The rest of the code are arbitrary conditions that signal the model is trained
-            # I was playing around with them and these conditions seem to yield good results most of the time
-            # Feel free to play around with this as much as you'd like
-            if timesteps < 180:
-                streak += 1
-                if streak > 5:
-                    print("Found Streak at Episode: " + str(attempt))
-                    break
-            else:
-                streak = 0
+            # Q(S,A) = Q(S,A) + a * [R + gamma * max_a(Q(S',A)) - Q(S,A)]
+            # update the q learning model
+            next_max = np.max(self.q_table[location][velocity])
+            old_value = self.q_table[location_old][velocity_old][action]
+            self.q_table[location_old][velocity_old][action] \
+                += self.alpha * (reward + self.gamma * next_max - old_value)

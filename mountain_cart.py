@@ -1,25 +1,33 @@
 from q_learning import QLearning
 from SARSA import SARSALearning
 from function_approximation import FApprox
-from method import RandomMethod
+import matplotlib.pyplot as plt
+import numpy as np
+
 
 if __name__ == "__main__":
     # Initialize a method
-    # method = QLearning("MountainCar-v0")
-    # method = SARSALearning("MountainCar-v0")
-    method = FApprox("MountainCar-v0")
-    # method = RandomMethod("MountainCar-v0")
+    methods = [QLearning("MountainCar-v0"),
+               SARSALearning("MountainCar-v0"),
+               FApprox("MountainCar-v0")]
+    # method = methods[2]
+    # method.train(1000)
 
-    # Build the model
-    load = False
-    if load:
-        method.load_model()
-    else:
-        method.train()
+    # # Test the method
+    # method.evaluate()
+    # method.plot()
 
-    # Test the method
-    method.evaluate()
-    method.plot()
-    method.display()
+    for method in methods:
+        graph = np.zeros(method.env._max_episode_steps / 10)
+        runs = 30
+        for run in range(1, runs + 1):
+            method.reset_model()
+            method.train(1000)
+            graph += method.convergence_graph / runs
 
+        plt.plot(graph, label=type(method).__name__)
 
+    plt.legend()
+    plt.ylabel("Timesteps To Solve")
+    plt.xlabel("Episode")
+    plt.show()
