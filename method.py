@@ -10,21 +10,24 @@ class RandomMethod:
     Base method to contain shared classes between other methods. Sets up shared methods to solve and evaluate the
     mountain cart problem.
     """
-    def __init__(self, environment):
+    def __init__(self, environment, print_progress=True):
         # Hyperparameters
         self.alpha = .9  # learning rate, how fast the model is trained.
         self.gamma = 1   # discount factor, immediate results or delayed results.
         self.epsilon = .01  # exploration chance, percent chance to take a random action.
 
         self.env = gym.make(environment)
-        self._max_episode_steps = 500  # How long the simulation runs at max
+        self.env._max_episode_steps = 1000  # How long the simulation runs at max
+        self.time_steps = 0
+        self.print = print_progress
 
         # How long each episode took
         self.convergence_graph = []
 
     # Train the model to solve the problem, attempts are episodes, time steps are epochs
-    def train(self, max_attempts=1000):
-        print("Training " + type(self).__name__)
+    def train(self, max_attempts=1000, break_on_trained=False):
+        if self.print:
+            print("Training " + type(self).__name__)
 
         for attempt in range(max_attempts):
             # Lower the exploration rate and the learning rate over time.
@@ -35,10 +38,16 @@ class RandomMethod:
             self._model()
 
             # Print progress bar and then add data to graph
-            self._print_progress(attempt, max_attempts)
+            if self.print:
+                self._print_progress(attempt, max_attempts)
 
             # Run attempt without random to evaluate progress
             self._evaluate_convergence(attempt)
+
+            if break_on_trained:
+                if np.mean(self.convergence_graph[-3:]) < 120:
+                    print("Trained Breaking!")
+                    break
 
     # Evaluate the performance of the model
     def evaluate(self):
@@ -62,10 +71,9 @@ class RandomMethod:
             if time_steps < 100:
                 num_optimal += 1
 
-        # pprint(self.q_table)
-        print("Average time steps per episode: " + str(total_time_steps / attempts))
-        print("Minimum time steps: " + str(min_time_steps))
-        print("Optimal runs: " + str(num_optimal))
+        print("Average: " + str(total_time_steps / attempts) +
+              ", Minimum: " + str(min_time_steps) +
+              ", Optimal: " + str(num_optimal))
         return total_time_steps / attempts, min_time_steps, num_optimal
 
     # Run the program once with the graphics to display the trained model

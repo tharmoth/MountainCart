@@ -13,8 +13,8 @@ class FApprox(RandomMethod):
     Based on the tile coding from
     Watkins, C.J.C.H. (1989), Learning from Delayed Rewards (PDF) (Ph.D. thesis), Cambridge University pp. 140-146
     """
-    def __init__(self, environment):
-        super().__init__(environment)
+    def __init__(self, environment, print_progress=True):
+        super().__init__(environment, print_progress)
 
         self.tiles = 12
         self.subtiles = 12
@@ -92,6 +92,7 @@ class FApprox(RandomMethod):
         self.active_tiles_prime = self._tileizer(state)
         action_prime = self._select_action(state, train=True)
         done = False
+        self.time_steps = 0
         while not done:
             # save the old state
             active_tiles = self.active_tiles_prime
@@ -116,4 +117,6 @@ class FApprox(RandomMethod):
 
             # either do something random or do the models best predicted action epsilon-greedy
             action_prime = self._select_action(state, train=True)
+
+            self.time_steps += 1
         self.active_tiles_prime = None

@@ -8,8 +8,8 @@ class SARSALearning(QLearning):
     """
     Attempts to solve the mountain cart problem using SARSA.
     """
-    def __init__(self, environment):
-        super().__init__(environment)
+    def __init__(self, environment, print_progress=True):
+        super().__init__(environment, print_progress)
         
         self.alpha = .9
         self.gamma = 1
@@ -24,6 +24,7 @@ class SARSALearning(QLearning):
         location, velocity = self._bin_data(state)
         next_action = self._select_action(state, True)
         done = False
+        self.time_steps = 0
         # loops until the episode has completed
         while not done:
             start_location = location
@@ -39,3 +40,5 @@ class SARSALearning(QLearning):
             self.q_table[start_location][start_velocity][action] = \
                 original_val + self.alpha * \
                 (reward + self.gamma * self.q_table[location][velocity][next_action] - original_val)
+
+            self.time_steps += 1

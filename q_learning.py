@@ -12,8 +12,8 @@ class QLearning(RandomMethod):
     Based on the q-learning method described in
     Watkins, Christopher JCH, and Peter Dayan. "Q-learning." Machine learning 8.3-4 (1992): 279-292.
     """
-    def __init__(self, environment):
-        super().__init__(environment)
+    def __init__(self, environment, print_progress=True):
+        super().__init__(environment, print_progress)
 
         self.location_bins = 12
         self.velocity_bins = 12
@@ -52,6 +52,7 @@ class QLearning(RandomMethod):
         state = self.env.reset()
         location, velocity = self._bin_data(state)  # Position of Cart, Velocity of Cart
         done = False
+        self.time_steps = 0
         while not done:
             # either do something random or do the models best predicted action
             action = self._select_action(state, train=True)
@@ -71,3 +72,5 @@ class QLearning(RandomMethod):
             old_value = self.q_table[location_old][velocity_old][action]
             self.q_table[location_old][velocity_old][action] \
                 += self.alpha * (reward + self.gamma * next_max - old_value)
+
+            self.time_steps += 1
