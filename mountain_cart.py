@@ -1,6 +1,6 @@
 from q_learning import QLearning
 from SARSA import SARSALearning
-from EligibilityTraces import EligibilityTraces
+from eligibility_traces import EligibilityTraces
 from function_approximation import FApprox
 import matplotlib.pyplot as plt
 import numpy as np
@@ -18,7 +18,7 @@ def run_method(method):
 def run_methods(methods_in):
     for method in methods_in:
         episodes = 500
-        runs = 5
+        runs = 1
         graph = np.zeros(int(episodes / 10))
         average_a, minimum_a, optimal_a = 0, 0, 0
         for run in range(1, runs + 1):
@@ -47,6 +47,8 @@ def self_iterate(method):
     best_optimal = 0
     best_minimum = 1000
     best_average = 1000
+
+    print("Running self iterate, This will run and save the best result until the user exits the program.")
 
     try:
         try:

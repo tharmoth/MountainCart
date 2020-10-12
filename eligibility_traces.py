@@ -1,8 +1,5 @@
-import gym
-import random
 import numpy as np
 from q_learning import QLearning
-from pprint import pprint
 
 
 class EligibilityTraces(QLearning):
